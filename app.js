@@ -28,15 +28,21 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + '-' + file.originalname);
     }
 });
-
 const upload = multer({ storage });
+
+const contributors_ua = ['віталік', 'олег', 'андрій', 'арсен', 'діма'];
+const contributors_en = ['vitalik', 'oleg', 'andriy', 'arsen', 'dima'];
 
 app.get('/hello', (req, res) => {
     res.json({ msg: 'hello, ebRaw!' });
 });
 
+app.get('/:name', (req, res) => {
+    if(contributors_en.includes(req.params.name))
+        res.json({ msg: `пішов в сраку ${contributors_ua[contributors_en.indexOf(req.params.name)]}` });
+});
+
 app.post('/add-goods', upload.single('image'), async (req, res) => {
-    console.log(req.body.name);
     const newGoods = await Goods({
         name: req.body.name,
         image: '/uploads/' + req.file.filename,
