@@ -1,6 +1,11 @@
 const express  = require('express');
 const mongoose = require('mongoose');
-const multer   = require('multer');
+const cors     = require('cors');
+const upload   = require('./multer.js');
+
+const { getCollectionId }   = require('./utils.js');
+const { Goods, Collection } = require('./models.js');
+
 require('dotenv').config({ quiet: true });
 const app = express();
 
@@ -10,60 +15,41 @@ mongoose.connect(process.env.MONGO_URI)
     .catch(err => console.log(`\x1b[31m\x1b[1m! Could not connect to MongoDB: \x1b[0m\x1b[1m\x1b[4m${err}\x1b[0m`));
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
+app.use(cors());
 
-const goodsShema = new mongoose.Schema({
-    name: String,
-    image: String,
-    price: Number,
-    rating: Number
-});
-const Goods = mongoose.model('Goods', goodsShema);
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/');
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
-    }
-});
-const upload = multer({ storage });
-
+// contributors names array
 const contributors_ua = ['віталік', 'олег', 'андрій', 'арсен', 'діма'];
 const contributors_en = ['vitalik', 'oleg', 'andriy', 'arsen', 'dima'];
 
-app.get('/hello', (req, res) => {
-    res.json({ msg: 'hello, ebRaw!' });
-});
+mongoose.connection.dropDatabase();
 
-app.get('/:name', (req, res) => {
-    if(contributors_en.includes(req.params.name))
-        res.json({ msg: `пішов в сраку ${contributors_ua[contributors_en.indexOf(req.params.name)]}` });
-});
-
+// put goods to database
 app.post('/add-goods', upload.single('image'), async (req, res) => {
+    const id = await getCollectionId(req.body.collection);
     const newGoods = await Goods({
         name: req.body.name,
         image: '/uploads/' + req.file.filename,
 
-        price: req.body.price
+        price: req.body.price,
+        collection: id
     });
-    
-    try {
-        newGoods.save();
-        res.json({ msg: 'Goods saved succesfully!' });
-    } catch (err) {
-        res.json({ msg: 'Goods saved error!' });
-        console.log(`\x1b[31m\x1b[1mError saving user:\x1b[0m ${err}`);
-    }
-})
 
+    newGoods.save().then(() => {
+        res.json({ ok: true, msg: 'Goods saved succesfully!' })
+    }).catch(err => {
+        res.json({ ok: false, msg: 'Goods saved error!', error: err })
+    });
+});
+
+// get all goods from db
 app.get('/all-goods', (req, res) => {
     Goods.find().then(goods =>
         res.json(goods));
 });
 
+// get random goods
 app.get('/random-goods', async (req, res) => {
     try {
         const randomGoods = await Goods.aggregate([{ $sample: { size: 1 } }]);
@@ -73,12 +59,64 @@ app.get('/random-goods', async (req, res) => {
     }
 });
 
+// get goods by id
 app.get('/id-goods/:id', (req, res) => {
     Goods.findOne({_id: req.params.id}).then(goods => {
         res.json(goods);
     }).catch(() =>
-        res.status(404).json({ msg: 'Page Not Found' })
-    );
+        res.status(404).json({ msg: 'Page Not Found' }));
+});
+
+/* Collection */
+
+// add new collection
+app.post('/add-collection', upload.none(), async (req, res) => {
+    const newCollection = await Collection({
+        title: req.body.title,
+        slug:  req.body.slug,
+        description: req.body.description
+    });
+
+    newCollection.save().then(() =>
+        res.json({ ok: true, msg: 'Collection saved succesfully!' })
+    ).catch((err) =>
+        res.json({ ok: false, msg: 'Collection saved error!', error: err }));
+});
+
+// get all collections
+app.get('/all-collections', (req, res) => {
+    Collection.find().then(collection =>
+        res.json(collection));
+});
+
+// get random collection
+app.get('/random-collection', async (req, res) => {
+    try {
+        const randomColl = await Collection.aggregate([{ $sample: { size: 1 } }]);
+        res.json(randomColl[0]);
+    } catch (err) {
+        res.json({ error: err.message });
+    }
+});
+
+// get collections goods
+app.get('/goods-in-collection/:collection', async (req, res) => {
+    const collId = await getCollectionId(req.params.collection);
+    Goods.find({ collection: collId }).then(goods => {
+        res.json(goods);
+    }).catch((err) =>
+        res.status(404).json({ msg: 'Page Not Found', error: err }));
+});
+
+// "hello, ebRaw" endpoint
+app.get('/hello', (req, res) => {
+    res.json({ msg: 'hello, ebRaw!' });
+});
+
+// just a joke
+app.get('/:name', (req, res) => {
+    if(contributors_en.includes(req.params.name))
+        res.json({ msg: `пішов в сраку ${contributors_ua[contributors_en.indexOf(req.params.name)]}` });
 });
 
 app.listen(PORT, (err) => {
