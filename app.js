@@ -23,8 +23,6 @@ app.use(cors());
 const contributors_ua = ['віталік', 'олег', 'андрій', 'арсен', 'діма'];
 const contributors_en = ['vitalik', 'oleg', 'andriy', 'arsen', 'dima'];
 
-mongoose.connection.dropDatabase();
-
 // put goods to database
 app.post('/add-goods', upload.single('image'), async (req, res) => {
     const id = await getCollectionId(req.body.collection);
@@ -97,6 +95,12 @@ app.get('/random-collection', async (req, res) => {
     } catch (err) {
         res.json({ error: err.message });
     }
+});
+
+app.get('/find-collection/:id', async (req, res) => {
+    Collection.findOne(req.query.q == 'title' ? { title: req.params.id } : { _id: req.params.id } ).then(collection => 
+        res.json(collection)
+    ).catch((err) => res.status(404).json({ msg: 'Page Not Found', error: err }));
 });
 
 // get collections goods
