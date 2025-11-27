@@ -1,6 +1,6 @@
 ## How to run the code?
 1. clone the repo: ``` git clone https://github.com/wrouruy/ebRaw-server.git ```
-2. Enter your ``` MONGO_URI ``` in  ``` .env ```!
+2. enter your ``` MONGO_URI ``` in  ``` .env ```!
 3. install packages: ``` npm install ```
 4. create "/uploads" directory: ``` mkdir uploads ```
 5. run the code: ``` node app ```
