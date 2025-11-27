@@ -12,14 +12,12 @@
     3. /id-goods/:id    : find goods by id
 ### Goods (POST):
     1. /add-goods:
-    ```
     {
         "name": String
         "image" Image (File)
         "price": Number
         "collection": String
     }
-    ```
 
 ### Collections(GET):
     1. /all-collections                   : get all collecions
@@ -28,10 +26,8 @@
     4. /goods-in-collection/:collection   : get all goods in collection
 ### Collections(POST):
     1. /add-collection:
-    ```
     {
-        "title": String           : unique, required
+        "title": String        : unique, required
         "slug": String
         "description": String
     }
-    ```
