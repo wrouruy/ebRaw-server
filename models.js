@@ -13,7 +13,7 @@ const Collection = mongoose.model('Collection', collectionSchema);
 
 const goodsSchema = new mongoose.Schema({
     name:   String,
-    image:  String,
+    image:  WritableStream,
     price:  Number,
     rating: Number,
     collection: {

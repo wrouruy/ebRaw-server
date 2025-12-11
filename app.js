@@ -2,6 +2,7 @@ const express  = require('express');
 const mongoose = require('mongoose');
 const cors     = require('cors');
 const upload   = require('./multer.js');
+const fs = require("fs");
 
 const { getCollectionId }   = require('./utils.js');
 const { Goods, Collection } = require('./models.js');
@@ -26,10 +27,10 @@ const contributors_en = ['vitalik', 'oleg', 'andriy', 'arsen', 'dima'];
 // put goods to database
 app.post('/add-goods', upload.single('image'), async (req, res) => {
     const id = await getCollectionId(req.body.collection);
+     const fileStream = fs.createReadStream('/uploads/' + req.file.filename);
     const newGoods = await Goods({
         name: req.body.name,
-        image: '/uploads/' + req.file.filename,
-
+        image: fileStream,
         price: req.body.price,
         collection: id
     });
